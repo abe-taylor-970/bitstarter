@@ -20,7 +20,7 @@ References:
    - https://developer.mozilla.org/en-US/docs/JSON
    - https://developer.mozilla.org/en-US/docs/JSON#JSON_in_Firefox_2
 */
-
+var returnVar = {};
 var fs = require('fs');
 var util = require('util');
 var rest = require('restler');
@@ -58,25 +58,27 @@ var checkHtmlFile = function(htmlfile, checksfile) {
 };
 
 var buildFn = function(checksfile) {
-    var checkHTML = function(result, response) {
-      returnVar = {};
+         
+
+        var checks = loadChecks(checksfile).sort();
+var checkHTML = function(result) {
       if (result instanceof Error) {
-          console.error('Error: ' + util.format(response.message));
+          console.error('Error: ' + util.format(result.message));
       } else {
         $ = cheerio.load(result);
-        var checks = loadChecks(checksfile).sort();
         for(var ii in checks) {
            var present = $(checks[ii]).length > 0;
            returnVar[checks[ii]] = present;
-       	    console.log(returnVar);
+//       	    console.log(returnVar);
       }
     }
-    return returnVar;
+    }
+    return checkHTML;
 };
 
 var checkURL = function(url, checksfile) {
-   checkHTML = buildFn(checksfile);
-   return rest.get(url).on('complete', checkHTML);
+   checkHTML = buildFn(checksfile); 
+   rest.get(url).on('complete', checkHTML);
 };
 
 var clone = function(fn) {
@@ -93,7 +95,10 @@ if(require.main == module) {
         .parse(process.argv);
     var checkJson;
     if (program.url) {
-        checkJson = checkURL(program.url, program.checks);
+        checkURL(program.url, program.checks);
+        console.log("returnVar: ");
+        console.log(returnVar);
+        checkJson = returnVar;
 	console.log("CheckJson :");
         console.log(checkJson);
     }
